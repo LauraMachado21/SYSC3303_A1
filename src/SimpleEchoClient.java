@@ -32,6 +32,7 @@ public class SimpleEchoClient {
 	   String mode = "ocTET";
 	   
 	   for(int i=0;i<10;i++){
+		   System.out.println("Package: " + i);
 		   if(i%2==0){
 			   sendAndReceive(read, fileName, mode);
 		   }else{
@@ -39,6 +40,7 @@ public class SimpleEchoClient {
 		   }
 	   }
 	   
+	   System.out.println("Package: 11");
 	   sendAndReceive("3",fileName,mode);
 	   sendReceiveSocket.close();
 
@@ -96,7 +98,7 @@ public class SimpleEchoClient {
       //  5000 - the destination port number on the destination host.
       try {
          sendPacket = new DatagramPacket(msg, msg.length,
-                                         InetAddress.getLocalHost(), 23);
+                                         InetAddress.getLocalHost(), 4001);
       } catch (UnknownHostException e) {
          e.printStackTrace();
          System.exit(1);
