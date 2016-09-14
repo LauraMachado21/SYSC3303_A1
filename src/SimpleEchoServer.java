@@ -23,7 +23,7 @@ public class SimpleEchoServer {
          // Construct a datagram socket and bind it to port 5000 
          // on the local host machine. This socket will be used to
          // receive UDP Datagram packets.
-         receiveSocket = new DatagramSocket(5000);
+         receiveSocket = new DatagramSocket(69);
          
          // to test socket timeout (2 seconds)
          //receiveSocket.setSoTimeout(2000);
