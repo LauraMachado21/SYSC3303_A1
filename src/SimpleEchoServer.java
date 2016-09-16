@@ -6,41 +6,80 @@
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 public class SimpleEchoServer {
 
    DatagramPacket sendPacket, receivePacket;
    DatagramSocket sendSocket, receiveSocket;
+   
+   private static byte[] READREQUEST = {0,3,0,1};
+   private static byte[] WRITEREQUEST = {0,4,0,0};
 
    public SimpleEchoServer()
    {
       try {
-         // Construct a datagram socket and bind it to any available 
-         // port on the local host machine. This socket will be used to
-         // send UDP Datagram packets.
-         sendSocket = new DatagramSocket();
-
-         // Construct a datagram socket and bind it to port 5000 
-         // on the local host machine. This socket will be used to
-         // receive UDP Datagram packets.
          receiveSocket = new DatagramSocket(5000);
-         
-         // to test socket timeout (2 seconds)
-         //receiveSocket.setSoTimeout(2000);
       } catch (SocketException se) {
          se.printStackTrace();
          System.exit(1);
       } 
    }
+   
+   private String checkData(DatagramPacket receivePacket){
+	   int j,k;
+	   byte readWrite;
+	   
+	   int len = receivePacket.getLength();
+	   byte[] data = receivePacket.getData();
+	   
+	   ByteBuffer fileName = ByteBuffer.allocate(len);
+	   ByteBuffer mode = ByteBuffer.allocate(len);
+	   
+	   if(data[1]==0){ return "ERROR";}
+	   else{ readWrite = data[1]; }
+	    
+	   //Start at index 2 - where filename should start
+	   for(j=2;j<len;j++){
+		   if(data[j]==0){
+			   break;
+		   }else{
+			   fileName.put(data[j]);
+		   }
+	   }
+	   
+	   //Check if anything was pushed to filename array.
+	   if(fileName.remaining()==len) return "ERROR";
+	   
+	   for(k=j+1;k<len;k++){
+		   if(data[k]==0){
+			   break;
+		   }else{
+			   mode.put(data[k]);
+		   }
+	   }
+	   
+	   //Check if anything was pushed to mode array.
+	   if(mode.remaining()==len) return "ERROR";
+	   //Validate there is nothing after the final 0.
+	   if(k!=len-1) return "ERROR";
+	   
+	   //At this point, request type, filename and mode are within the data string.
+	   if(readWrite==1){ return "READ"; }
+	   else if(readWrite==2){ return "WRITE";}
+	   else { return "ERROR"; }
+	      
+   }
 
-   public void receiveAndEcho()
+   public void receiveAndEcho() throws Exception
    {
       // Construct a DatagramPacket for receiving packets up 
       // to 100 bytes long (the length of the byte array).
 
       byte data[] = new byte[100];
       receivePacket = new DatagramPacket(data, data.length);
-      System.out.println("Server: Waiting for Packet.\n");
+      System.out.println("Server: Waiting for Packet.");
 
       // Block until a datagram packet is received from receiveSocket.
       try {        
@@ -55,82 +94,61 @@ public class SimpleEchoServer {
 
       // Process the received datagram.
       System.out.println("Server: Packet received:");
-      System.out.println("From host: " + receivePacket.getAddress());
-      System.out.println("Host port: " + receivePacket.getPort());
       int len = receivePacket.getLength();
-      System.out.println("Length: " + len);
-      System.out.print("Containing: " );
-
-      // Form a String from the byte array.
-      String received = new String(data,0,len);   
-      System.out.println(received + "\n");
+      System.out.println("Containing: " );
       
-      // Slow things down (wait 5 seconds)
-      try {
-          Thread.sleep(5000);
-      } catch (InterruptedException e ) {
-          e.printStackTrace();
-          System.exit(1);
-      }
- 
-      // Create a new datagram packet containing the string received from the client.
-
-      // Construct a datagram packet that is to be sent to a specified port 
-      // on a specified host.
-      // The arguments are:
-      //  data - the packet data (a byte array). This is the packet data
-      //         that was received from the client.
-      //  receivePacket.getLength() - the length of the packet data.
-      //    Since we are echoing the received packet, this is the length 
-      //    of the received packet's data. 
-      //    This value is <= data.length (the length of the byte array).
-      //  receivePacket.getAddress() - the Internet address of the 
-      //     destination host. Since we want to send a packet back to the 
-      //     client, we extract the address of the machine where the
-      //     client is running from the datagram that was sent to us by 
-      //     the client.
-      //  receivePacket.getPort() - the destination port number on the 
-      //     destination host where the client is running. The client
-      //     sends and receives datagrams through the same socket/port,
-      //     so we extract the port that the client used to send us the
-      //     datagram, and use that as the destination port for the echoed
-      //     packet.
-
-      sendPacket = new DatagramPacket(data, receivePacket.getLength(),
+      System.out.print("In bytes: ");
+      for(int i=0;i<len;i++) System.out.print(data[i] + " ");
+      
+      System.out.print("\nString: ");      // Form a String from the byte array.
+      String received = new String(data,0,len);   
+      System.out.println(received);
+      
+      byte[] requestData = null;    
+      String requestType;
+      requestType = checkData(receivePacket);
+		
+	  if(requestType=="ERROR"){throw new Exception("Package error. Invalid request.");}
+	  else if(requestType=="READ"){ requestData=READREQUEST;}
+	  else { requestData=WRITEREQUEST;}
+  
+      sendPacket = new DatagramPacket(requestData, requestData.length,
                                receivePacket.getAddress(), receivePacket.getPort());
 
+      System.out.println();
       System.out.println( "Server: Sending packet:");
-      System.out.println("To host: " + sendPacket.getAddress());
-      System.out.println("Destination host port: " + sendPacket.getPort());
       len = sendPacket.getLength();
-      System.out.println("Length: " + len);
-      System.out.print("Containing: ");
-      System.out.println(new String(sendPacket.getData(),0,len));
-      // or (as we should be sending back the same thing)
-      // System.out.println(received); 
+      System.out.print("Containing bytes: ");
+      for(int i=0;i<len;i++) System.out.print(sendPacket.getData()[i] + " ");
         
-      // Send the datagram packet to the client via the send socket. 
+      // Send the datagram packet to the client via the send socket.
+      sendSocket = new DatagramSocket();
       try {
          sendSocket.send(sendPacket);
       } catch (IOException e) {
          e.printStackTrace();
          System.exit(1);
       }
+      
+      System.out.println();
+      System.out.println("Server: packet sent\n");
 
-      System.out.println("Server: packet sent");
 
     // We're finished, so close the sockets.
-//      sendSocket.close();
-//      receiveSocket.close();
+     sendSocket.close();
    }
 
    public static void main( String args[] )
    {
 	  SimpleEchoServer c = new SimpleEchoServer();	
 	  while(true){
-		  c.receiveAndEcho(); 
+		  try {
+			c.receiveAndEcho();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 	  }
-
    }
 }
 

@@ -4,6 +4,8 @@
 // for the server to send it back to the client.
 // Last edited January 9th, 2016
 
+//5000=69 & 4001=23
+
 import java.io.*;
 import java.net.*;
 
@@ -15,9 +17,6 @@ public class SimpleEchoClient {
    public SimpleEchoClient()
    {
       try {
-         // Construct a datagram socket and bind it to any available 
-         // port on the local host machine. This socket will be used to
-         // send and receive UDP Datagram packets.
          sendReceiveSocket = new DatagramSocket();
       } catch (SocketException se) {   // Can't create the socket.
          se.printStackTrace();
@@ -26,13 +25,13 @@ public class SimpleEchoClient {
    }
    
    public void sendMessages(){
-	   String read = "1";
-	   String write = "2";
+	   byte read = 1;
+	   byte write = 2;
 	   String fileName = "test.txt";
 	   String mode = "ocTET";
 	   
 	   for(int i=0;i<10;i++){
-		   System.out.println("Package: " + i);
+		   System.out.println("Package: #" + i);
 		   if(i%2==0){
 			   sendAndReceive(read, fileName, mode);
 		   }else{
@@ -40,21 +39,20 @@ public class SimpleEchoClient {
 		   }
 	   }
 	   
-	   System.out.println("Package: 11");
-	   sendAndReceive("3",fileName,mode);
+	   System.out.println("Package: #11");
+	   sendAndReceive((byte) 3,fileName,mode);
 	   sendReceiveSocket.close();
 
    }
 
-   public void sendAndReceive(String readwrite, String filename, String mode)
+   public void sendAndReceive(byte readwrite, String filename, String mode)
    {
-      // Prepare a DatagramPacket and send it via sendReceiveSocket
-      // to port 5000 on the destination host.
  
 	   byte zeroByte[] = new byte[1];
 	   zeroByte[0] = 0;
 	   
-	   byte readWrite[] = readwrite.getBytes();
+	   byte[] readWrite = new byte[1];
+	   readWrite[0] = readwrite;
 	   byte fileName[] = filename.getBytes();	   
 	   byte modeName[] = mode.getBytes();
 	   
@@ -71,31 +69,7 @@ public class SimpleEchoClient {
 	   System.arraycopy(zeroByte, 0, msg, (zeroByte.length+readWrite.length+fileName.length), zeroByte.length);
 	   System.arraycopy(modeName, 0, msg,(zeroByte.length+readWrite.length+fileName.length+zeroByte.length), modeName.length);
 	   System.arraycopy(zeroByte, 0, msg,(zeroByte.length+readWrite.length+fileName.length+zeroByte.length+modeName.length), zeroByte.length);
-	   
-	   String s = "01test.txt0ocTET0";
-//	  
-      System.out.println("Client: sending a packet containing:\n" + s);
-
-      // Java stores characters as 16-bit Unicode values, but 
-      // DatagramPackets store their messages as byte arrays.
-      // Convert the String into bytes according to the platform's 
-      // default character encoding, storing the result into a new 
-      // byte array.
-
-//      byte msg[] = s.getBytes();
-
-      // Construct a datagram packet that is to be sent to a specified port 
-      // on a specified host.
-      // The arguments are:
-      //  msg - the message contained in the packet (the byte array)
-      //  msg.length - the length of the byte array
-      //  InetAddress.getLocalHost() - the Internet address of the 
-      //     destination host.
-      //     In this example, we want the destination to be the same as
-      //     the source (i.e., we want to run the client and server on the
-      //     same computer). InetAddress.getLocalHost() returns the Internet
-      //     address of the local host.
-      //  5000 - the destination port number on the destination host.
+      
       try {
          sendPacket = new DatagramPacket(msg, msg.length,
                                          InetAddress.getLocalHost(), 4001);
@@ -105,12 +79,12 @@ public class SimpleEchoClient {
       }
 
       System.out.println("Client: Sending packet:");
-      System.out.println("To host: " + sendPacket.getAddress());
-      System.out.println("Destination host port: " + sendPacket.getPort());
-      int len = sendPacket.getLength();
-      System.out.println("Length: " + len);
-      System.out.print("Containing: ");
-      System.out.println(new String(sendPacket.getData(),0,len)); // or could print "s"
+      System.out.print("Containing: \n");
+      System.out.println("In bytes: ");
+      for(int i=0;i<sendPacket.getLength();i++) System.out.print(sendPacket.getData()[i] + " ");
+      System.out.println();
+      System.out.print("As string: ");
+      System.out.print(new String(sendPacket.getData(),0,sendPacket.getLength()) + "\n"); 
 
       // Send the datagram packet to the server via the send/receive socket. 
 
@@ -139,15 +113,15 @@ public class SimpleEchoClient {
 
       // Process the received datagram.
       System.out.println("Client: Packet received:");
-      System.out.println("From host: " + receivePacket.getAddress());
-      System.out.println("Host port: " + receivePacket.getPort());
-      len = receivePacket.getLength();
-      System.out.println("Length: " + len);
-      System.out.print("Containing: ");
-
-      // Form a String from the byte array.
-      String received = new String(data,0,len);   
-      System.out.println(received);
+      int len = receivePacket.getLength();
+      System.out.println("Containing: " );
+      
+      System.out.print("In bytes: ");
+      for(int i=0;i<len;i++) System.out.print(receivePacket.getData()[i] + " ");
+      
+      System.out.print("\nString: ");      // Form a String from the byte array.
+      System.out.println(new String(receivePacket.getData(),0,len));
+      System.out.println();
 
       // We're finished, so close the socket.
 	  

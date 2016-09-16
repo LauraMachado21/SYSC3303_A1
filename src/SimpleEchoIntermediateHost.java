@@ -35,16 +35,16 @@ public class SimpleEchoIntermediateHost {
 	          System.exit(1);
 	       }
 	      
-//	      System.out.println("IntHost: Sending Packet:");
-//	      System.out.println("From host: " + receivePacket.getAddress());
-//	      System.out.println("Host port: " + receivePacket.getPort());
-//	      int len = receivePacket.getLength();
-//	      System.out.println("Length: " + len);
-//	      System.out.print("Containing: " );
-	      
-//	      String received = new String(data,0,len);   
-//	      System.out.println(received + "\n");
+	      int len = clientReceivePacket.getLength();
+
+
 	      System.out.println("IntHost: Packet received from client.");
+	      System.out.print("Containing: \n");
+	      System.out.println("In bytes: ");
+	      for(int i=0;i<len;i++) System.out.print(data[i] + " ");
+	      System.out.println();
+	      System.out.print("As string: ");
+	      System.out.print(new String(data,0,len) + "\n");  
 	      
 	      try {
 	          serverSendPacket = new DatagramPacket(data, clientReceivePacket.getLength(),
@@ -55,6 +55,12 @@ public class SimpleEchoIntermediateHost {
 	       }
 	      
 	      System.out.println("IntHost: Sending Packet to server.");
+	      System.out.print("Containing: \n");
+	      System.out.println("In bytes: ");
+	      for(int i=0;i<len;i++) System.out.print(serverSendPacket.getData()[i] + " ");
+	      System.out.println();
+	      System.out.print("As string: ");
+	      System.out.print(new String(serverSendPacket.getData(),0,len) + "\n");  
 	      
 	      try {
 	          serverSendReceiveSocket.send(serverSendPacket);
@@ -63,7 +69,7 @@ public class SimpleEchoIntermediateHost {
 	          System.exit(1);
 	       }
 	      
-	      System.out.println("IntHost: Packet Sent to server.");
+	      System.out.println("IntHost: Packet Sent to server.\n");
 	      
 	      serverReceivePacket = new DatagramPacket(data, data.length);
 	      
@@ -78,18 +84,33 @@ public class SimpleEchoIntermediateHost {
 	       }
 	      
 	      System.out.println("IntHost: Packet received from server.");
+	      System.out.print("Containing: \n");
+	      System.out.println("In bytes: ");
+	      for(int i=0;i<serverReceivePacket.getLength();i++) System.out.print(serverReceivePacket.getData()[i] + " ");
+	      System.out.println();
+	      System.out.print("As string: ");
+	      System.out.print(new String(serverReceivePacket.getData(),0,len) + "\n");  
 	      
-	      clientSendPacket = new DatagramPacket(data, clientReceivePacket.getLength(),
+	      clientSendPacket = new DatagramPacket(serverReceivePacket.getData(), serverReceivePacket.getLength(),
 	                                          clientReceivePacket.getAddress(), clientReceivePacket.getPort());
 	      
-	      System.out.println("IntHost: Sending Packet to server.");
+	      System.out.println("IntHost: Sending Packet to client.");
+	      System.out.print("Containing: \n");
+	      System.out.println("In bytes: ");
+	      for(int i=0;i<clientSendPacket.getLength();i++) System.out.print(clientSendPacket.getData()[i] + " ");
+	      System.out.println();
+	      System.out.print("As string: ");
+	      System.out.print(new String(clientSendPacket.getData(),0,len) + "\n"); 
+	      
 	      
 	      try {
 	          clientSendSocket.send(clientSendPacket);
 	       } catch (IOException e) {
 	          e.printStackTrace();
 	          System.exit(1);
-	      }  
+	      } 
+	      
+	      System.out.println("IntHost: Packet Sent to client.\n");
 	}
 	
    public static void main( String args[] )
